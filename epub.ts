@@ -6,6 +6,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import archiver from 'archiver';
 import { createWriteStream } from "fs";
+import prettier from 'prettier';
 
 const run = promisify(exec);
 
@@ -16,6 +17,16 @@ const OUTPUT_EPUB = join(BUILD_DIR, "build.epub");
 
 // Helpers
 const pad = (n: number) => String(n).padStart(4, "0");
+async function formatHTML(html: string) {
+  return prettier.format(html, {
+    parser: 'html',
+    htmlWhitespaceSensitivity: 'ignore',
+    printWidth: 100,
+  });
+}
+
+// Copy template to build directory
+await cp(TEMPLATE_DIR, BUILD_DIR, { recursive: true });
 
 // Load chapter template
 const chapterTemplatePath = join(
@@ -70,13 +81,14 @@ for (const file of files) {
     .replace(/{{\s*content\s*}}/g, htmlContent)
     .replace(/{{\s*footnote\s*}}/g, footHTML);
 
+  const formattedContent = await formatHTML(rendered);
   const outPath = join(
     BUILD_DIR,
     "OEBPS",
     "Text",
     `Chapter${pad(index)}.xhtml`
   );
-  await writeFile(outPath, rendered, "utf-8");
+  await writeFile(outPath, formattedContent, "utf-8");
   console.log(`✅ 输出章节 Chapter${pad(index)}.xhtml`);
 }
 
@@ -108,7 +120,10 @@ const liInsert = chapters
   )
   .join("\n");
 nav = nav.replace("</ol>", `${liInsert}\n</ol>`);
-await writeFile(navPath, nav, "utf-8");
+const formattedNav = await formatHTML(nav);
+
+
+
 
 await writeFile(navPath, formattedNav, "utf-8");
 
