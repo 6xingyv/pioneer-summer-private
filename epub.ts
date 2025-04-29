@@ -19,7 +19,7 @@ const pad = (n: number) => String(n).padStart(4, "0");
 
 // Load chapter template
 const chapterTemplatePath = join(
-  TEMPLATE_DIR,
+  BUILD_DIR,
   "OEBPS",
   "Text",
   "ChapterTemplate.xhtml"
@@ -71,7 +71,7 @@ for (const file of files) {
     .replace(/{{\s*footnote\s*}}/g, footHTML);
 
   const outPath = join(
-    TEMPLATE_DIR,
+    BUILD_DIR,
     "OEBPS",
     "Text",
     `Chapter${pad(index)}.xhtml`
@@ -81,7 +81,7 @@ for (const file of files) {
 }
 
 // Append to content.opf
-const opfPath = join(TEMPLATE_DIR, "OEBPS", "content.opf");
+const opfPath = join(BUILD_DIR, "OEBPS", "content.opf");
 let opf = await readFile(opfPath, "utf-8");
 const manifestInsert = chapters
   .map(
@@ -99,7 +99,7 @@ opf = opf.replace("</spine>", `${spineInsert}\n</spine>`);
 await writeFile(opfPath, opf, "utf-8");
 
 // Append to nav.xhtml
-const navPath = join(TEMPLATE_DIR, "OEBPS", "Text", "nav.xhtml");
+const navPath = join(BUILD_DIR, "OEBPS", "Text", "nav.xhtml");
 let nav = await readFile(navPath, "utf-8");
 const liInsert = chapters
   .map(
@@ -110,8 +110,7 @@ const liInsert = chapters
 nav = nav.replace("</ol>", `${liInsert}\n</ol>`);
 await writeFile(navPath, nav, "utf-8");
 
-// Copy template to build/
-await cp(TEMPLATE_DIR, BUILD_DIR, { recursive: true });
+await writeFile(navPath, formattedNav, "utf-8");
 
 // Generate .epub
 const output = createWriteStream(OUTPUT_EPUB);
@@ -131,8 +130,5 @@ archive.directory(join(BUILD_DIR, "META-INF"), "META-INF");
 archive.directory(join(BUILD_DIR, "OEBPS"), "OEBPS");
 
 await archive.finalize();
-
-
-
 
 console.log(`📘 EPUB 打包完成: ${OUTPUT_EPUB}`);
