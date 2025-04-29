@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package version="3.0" xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>红领巾之夏</dc:title>
+    <dc:language>zh_CN</dc:language>
+    <dc:identifier id="BookId">urn:uuid:7317cd45-7a02-4caa-8521-ad38a8d7f83f</dc:identifier>
+  </metadata>
+  <manifest>
+    <item id="cover.png" href="Images/cover.png" media-type="image/png" properties="cover-image" />
+    <item id="duokan.css" href="Styles/duokan.css" media-type="text/css" />
+    <item id="note.png" href="Images/note.png" media-type="image/png" />
+    <item id="cover.xhtml" href="Text/cover.xhtml" media-type="application/xhtml+xml"
+      properties="svg" />
+    <item id="nav" href="Text/nav.xhtml" media-type="application/xhtml+xml" properties="nav" />
+  </manifest>
+  <spine>
+    <itemref idref="nav" />
+  </spine>
+</package>
