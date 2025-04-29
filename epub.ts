@@ -1,4 +1,4 @@
-import { readdir, readFile, writeFile, mkdir, cp } from "fs/promises";
+import { readdir, readFile, writeFile, mkdir, cp, unlink } from "fs/promises";
 import { join } from "path";
 import matter from "gray-matter";
 import { marked } from "marked";
@@ -121,11 +121,10 @@ const liInsert = chapters
   .join("\n");
 nav = nav.replace("</ol>", `${liInsert}\n</ol>`);
 const formattedNav = await formatHTML(nav);
-
-
-
-
 await writeFile(navPath, formattedNav, "utf-8");
+
+// Delete Template
+await unlink(join(BUILD_DIR, "OEBPS", "Text", "ChapterTemplate.xhtml"));
 
 // Generate .epub
 const output = createWriteStream(OUTPUT_EPUB);
