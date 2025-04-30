@@ -1,9 +1,13 @@
 {
   "name": "epub-workflow",
-  "module": "epub.ts",
+  "module": "build.ts",
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest"
+  },
+  "scripts":{
+    "build": "bun run ./build.ts",
+    "clean": "bun run ./clean.ts",
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
