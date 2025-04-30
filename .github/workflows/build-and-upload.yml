@@ -1,0 +1,48 @@
+name: Build and Upload EPUB
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+          
+      - name: Install dependencies
+        run: bun install
+        
+      - name: Build EPUB
+        run: bun run build
+        
+      - name: Rename EPUB file
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Listing all epub files:"
+          find . -name "*.epub" -type f
+          
+          EPUB_FILE=$(find . -name "*.epub" -type f | head -n 1)
+          if [ -z "$EPUB_FILE" ]; then
+            echo "Error: No EPUB file found"
+            exit 1
+          fi
+          
+          NEW_NAME="红领巾之夏_$(date +'%Y%m%d').epub"
+          echo "Moving $EPUB_FILE to $NEW_NAME"
+          mv "$EPUB_FILE" "$NEW_NAME"
+          
+      - name: Upload EPUB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: epub-book
+          path: 红领巾之夏_*.epub
+          retention-days: 30
+          compression-level: 9
