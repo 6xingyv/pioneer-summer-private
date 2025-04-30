@@ -2,7 +2,18 @@
 
 ## 准备工作
 
-1. 安装 Bun
+1. 安装 Git
+   - Windows: 从 https://git-scm.com/download/win 下载安装包
+   - macOS: 使用 `brew install git`
+   - Linux: 使用 `sudo apt install git` 或对应包管理器
+
+2. 配置 Git
+```sh
+git config --global user.name "你的名字"
+git config --global user.email "你的邮箱"
+```
+
+3. 安装 Bun
 
 Linux/macOS:
 ```sh
@@ -13,7 +24,7 @@ Windows:
 powershell -c "irm bun.sh/install.ps1 | iex"
 ```
 
-2. 安装所需依赖
+4. 安装所需依赖
 
 ```sh
 bun install
@@ -21,9 +32,18 @@ bun install
 
 ## 翻译工作流程
 
-1. 从`main`分支创建新翻译分支`translation/chapter-x`
+1. 克隆项目
+```sh
+git clone https://github.com/6xingyv/红领巾之夏.git
+cd 红领巾之夏
+```
 
-2. 签出到对应分支
+2. 创建并切换到新的翻译分支
+```sh
+git checkout main         # 确保在main分支上
+git pull                  # 获取最新更新
+git checkout -b translation/chapter-x  # 创建并切换到新分支
+```
 
 3. 在分支内进行翻译工作
     > 提交标记:
@@ -33,5 +53,23 @@ bun install
     > 3. `review`: 审阅和批注
     > 4. `edit`: 阅读审阅意见后进行修改
 
-4. 在翻译工作完成后，合并对应`translation/chapter-x`分支至`main`分支
+    提交修改：
+    ```sh
+    git add .                     # 添加所有修改
+    git commit -m "main: 翻译第x章"  # 提交修改
+    git push origin translation/chapter-x  # 推送到远程仓库
+    ```
+
+4. 翻译完成后合并分支
+   - 在GitHub上创建Pull Request
+   - 等待审核通过
+   - 合并到main分支
+
+## 常用Git命令
+
+- 查看当前状态：`git status`
+- 查看分支：`git branch`
+- 撤销修改：`git restore <文件名>`
+- 查看提交历史：`git log`
+- 切换分支：`git checkout <分支名>`
 
