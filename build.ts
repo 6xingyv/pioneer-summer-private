@@ -59,17 +59,18 @@ for (const file of files) {
   const footnotes: string[] = [];
   const htmlContent = await marked(
     parsed.content.replace(/\^\[(.+?)\]/g, (_, note) => {
+      const currentId = footnoteId++;
       footnotes.push(note.trim());
-      return `<sup><a class="duokan-footnote" href="#note_${footnoteId}" id="noteref_${footnoteId}"><img src="../Images/note.png"/></a></sup>`;
+      return `<sup><a class="duokan-footnote" href="#note_${currentId}" id="noteref_${currentId}"><img src="../Images/note.png"/></a></sup>`;
     })
   );
 
   const footHTML = footnotes
     .map(
-      (note, i) =>
-        `<li class="duokan-footnote-item" id="note_${
-          i + 1
-        }"><a href="#noteref_${i + 1}">(${i + 1})</a>${note}</li>`
+      (note, i) => {
+        const noteId = i + 1;
+        return `<li class="duokan-footnote-item" id="note_${noteId}"><a href="#noteref_${noteId}">(${noteId})</a>${note}</li>`;
+      }
     )
     .join("\n");
 
