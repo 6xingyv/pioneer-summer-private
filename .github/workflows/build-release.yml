@@ -1,73 +1,102 @@
-name: Build and Upload EPUB(Release)
+name: Build and Upload EPUB (Release)
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'translation/chapter-*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+        with:
+          fetch-depth: 0
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
-          
+
       - name: Install dependencies
         run: bun install
-        
+
       - name: Build EPUB
         run: bun run build
-        
+
       - name: Rename EPUB file
         run: |
-          EPUB_FILE=$(find . -name "*.epub" -type f | head -n 1)
+          EPUB_FILE=$(find build -name "*.epub" -type f | head -n 1)
           if [ -z "$EPUB_FILE" ]; then
             echo "Error: No EPUB file found"
             exit 1
           fi
-          
-          VERSION=$(date +'%Y%m%d')
-          NEW_NAME="红领巾之夏_v${VERSION}.epub"
+
+          # 生成版本号：日期-hash
+          DATE_VERSION=$(date +'%Y%m%d')
+          COMMIT_HASH=$(git rev-parse --short=7 HEAD)
+          VERSION="${DATE_VERSION}-${COMMIT_HASH}"
+
+          NEW_NAME="Pioneer_Summer_v${VERSION}.epub"
           mv "$EPUB_FILE" "$NEW_NAME"
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          
+
       - name: Get Commit Messages
         id: get_commits
+        shell: bash
         run: |
-          # 获取最近一个tag到现在的所有提交
-          COMMITS=$(git log $(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD --pretty=format:"- %s" | grep -v "Merge")
-          # 将提交信息按类型分类
-          CHAPTERS=$(echo "$COMMITS" | grep -i "main:" || true)
-          FEATURES=$(echo "$COMMITS" | grep -i "feat:" || true)
-          FIXES=$(echo "$COMMITS" | grep -i "fix:" || true)
-          OTHER=$(echo "$COMMITS" | grep -vi "feat:\|fix:\|main:" || true)
-          
-          # 生成release notes
-          {
-            echo -e "\n### 📚 章节更改"
-            echo "$CHAPTERS"
-            echo "### ✨ 新增功能"
-            echo "$FEATURES"
-            echo -e "\n### 🐛 问题修复"
-            echo "$FIXES"
-            echo -e "\n### 🔧 其他更改"
-            echo "$OTHER"
-          } > release_notes.txt
-          
+          # 确保有提交历史
+          if ! git rev-parse HEAD >/dev/null 2>&1; then
+            echo "No commits found"
+            echo "" > release_notes.txt
+            exit 0
+          fi
+
+          # 获取最后一个tag或第一个commit
+          if BASE=$(git describe --tags --abbrev=0 2>/dev/null); then
+            echo "Using latest tag as base"
+          else
+            BASE=$(git rev-list --max-parents=0 HEAD)
+            echo "Using initial commit as base: $BASE"
+          fi
+
+          # 获取提交信息，确保即使没有新提交也不会失败
+          COMMITS=$(git log "$BASE..HEAD" --pretty=format:"- %s" 2>/dev/null || echo "")
+          if [ -z "$COMMITS" ]; then
+            echo "No new commits found"
+            echo "### 🎉 首次发布" > release_notes.txt
+            exit 0
+          fi
+
+          # 移除合并提交
+          COMMITS=$(echo "$COMMITS" | grep -v "Merge" || true)
+
+          # 分类（使用 || true 确保 grep 失败不会导致脚本退出）
+          CHAPTERS=$(echo "$COMMITS" | { grep -i "main:" || true; })
+          FEATURES=$(echo "$COMMITS" | { grep -i "feat:" || true; })
+          FIXES=$(echo "$COMMITS" | { grep -i "fix:" || true; })
+          OTHER=$(echo "$COMMITS" | { grep -vi "feat:\|fix:\|main:" || true; })
+
+          # 排序章节编号(如: main: Add chapter 12 ...)
+          CHAPTERS=$(echo "$CHAPTERS" | sort -t'-' -k2 -n)
+
+          # 生成 release notes
+          : > release_notes.txt  # 清空
+
+          [ -n "$CHAPTERS" ] && echo -e "### 📚 章节更改\n$CHAPTERS\n" >> release_notes.txt
+          [ -n "$FEATURES" ] && echo -e "### ✨ 新增功能\n$FEATURES\n" >> release_notes.txt
+          [ -n "$FIXES" ] && echo -e "### 🐛 问题修复\n$FIXES\n" >> release_notes.txt
+          [ -n "$OTHER" ] && echo -e "### 🔧 其他更改\n$OTHER\n" >> release_notes.txt
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          name: "📖 红领巾之夏 v${{ env.VERSION }}"
+          name: "v${{ env.VERSION }}"
           tag_name: "v${{ env.VERSION }}"
           body_path: release_notes.txt
-          files: 红领巾之夏_v*.epub
+          files: Pioneer_Summer_v*.epub
           draft: false
           prerelease: false
         env:
