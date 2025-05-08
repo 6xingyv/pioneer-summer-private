@@ -75,7 +75,7 @@ for (const file of files) {
     .join("\n");
 
   chapters.push({ index, title, content: htmlContent, footnotes: footnotes });
-
+  chapters.sort((a, b) => a.index - b.index);
   // Render chapter file
   const rendered = chapterTemplate
     .replace(/{{\s*title\s*}}/g, title)
