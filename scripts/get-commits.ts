@@ -35,10 +35,10 @@ async function main() {
 
   // Categorize commits
   const categories: CommitCategories = {
-    chapters: lines.filter(l => /(main(:|\/(chore))|review|edit):/i.test(l)).sort(),
+    chapters: lines.filter(l => /(main|review|edit)/i.test(l)).sort(),
     features: lines.filter(l => /feat:/i.test(l)),
     fixes: lines.filter(l => /fix:/i.test(l)),
-    others: lines.filter(l => !/(main(:|\/(chore))|review|edit|feat|fix):/i.test(l))
+    others: lines.filter(l => !/(main|review|edit|feat|fix):/i.test(l))
   };
 
   // Generate release notes

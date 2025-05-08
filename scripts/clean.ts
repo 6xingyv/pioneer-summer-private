@@ -1,30 +1,35 @@
-// Import 'fs', which works correctly in both Bun and Node.js
 import fs from 'fs';
-import path from 'path'; // Similarly, both 'node:path' and 'path' work the same way
+import path from 'path';
 
-// Get the absolute path of the build folder relative to the current working directory
-const buildDirPath = path.resolve('./build');
+const BUILD_DIR = 'build';
+const buildDirPath = path.resolve(BUILD_DIR);
 
-console.log(`🧹 正在清理目录: ${buildDirPath}`);
+async function clean() {
+  try {
+    console.log(`🧹 正在清理目录: ${buildDirPath}`);
+    
+    if (fs.existsSync(buildDirPath)) {
+      await fs.promises.rm(buildDirPath, { recursive: true, force: true });
+      console.log('✅ 目录及其内容已成功删除');
+    } else {
+      console.log('ℹ️ 目录不存在，无需删除');
+    }
 
-try {
-  // 1. Check if build directory exists
-  if (fs.existsSync(buildDirPath)) {
-    // 2. If exists, recursively delete the directory and its contents
-    fs.rmSync(buildDirPath, { recursive: true, force: true });
-    console.log('✅ 目录及其内容已成功删除');
-  } else {
-    console.log('ℹ️ 目录不存在，无需删除');
+    // 确保父目录存在
+    const parentDir = path.dirname(buildDirPath);
+    if (!fs.existsSync(parentDir)) {
+      await fs.promises.mkdir(parentDir, { recursive: true });
+    }
+    
+    await fs.promises.mkdir(buildDirPath);
+    console.log('✅ 已成功创建空目录');
+    
+    console.log('✨ 清理操作已完成');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ 清理操作出错:', error);
+    process.exit(1);
   }
-
-  // 3. (Optional) Recreate empty build directory
-  fs.mkdirSync(buildDirPath);
-  console.log('✅ 已成功创建空目录');
-
-  console.log('✨ 清理操作已完成');
-  process.exit(0); // Exit code 0 indicates success
-
-} catch (error) {
-  console.error('❌ 清理操作出错:', error);
-  process.exit(1); // Non-zero exit code indicates failure
 }
+
+clean();
