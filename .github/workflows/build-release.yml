@@ -1,17 +1,14 @@
 name: Build and Upload EPUB(Release)
 
 on:
-  pull_request:
-    types:
-      - closed
+  push:
     branches:
       - main
     paths:
-      - 'translate/chapter-*'
+      - 'translation/chapter-*'
 
 jobs:
   build:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     
     steps:
