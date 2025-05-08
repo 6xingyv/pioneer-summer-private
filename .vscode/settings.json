@@ -2,7 +2,8 @@
     "cSpell.words": [
         "duokan",
         "EPUB",
-        "OEBPS"
+        "OEBPS",
+        "softprops"
     ],
     "files.exclude": {
         "**/.git": true,
