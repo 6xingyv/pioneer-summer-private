@@ -56,7 +56,7 @@ git checkout -b translation/chapter-x  # 创建并切换到新分支
     提交修改：
     ```sh
     git add .                     # 添加所有修改
-    git commit -m "main: 翻译第x章"  # 提交修改
+    git commit -m "main: Add chapter X"  # 提交修改
     git push origin translation/chapter-x  # 推送到远程仓库
     ```
 

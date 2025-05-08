@@ -45,52 +45,7 @@ jobs:
 
       - name: Get Commit Messages
         id: get_commits
-        shell: bash
-        env:
-          SHELL: /bin/bash
-          LANG: en_US.UTF-8
-        run: |
-          # 配置 git
-          git config --global core.quotepath false
-
-          # 获取最新的远程tag
-          git fetch --tags
-
-          # 获取当前最新的tag版本
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null)
-          
-          if [ -z "$LATEST_TAG" ]; then
-            # 如果没有tag,则为首次发布
-            echo "### 🎉 首次发布" > release_notes.txt
-            exit 0
-          fi
-
-          # 获取从最新tag到现在的提交
-          COMMITS=$(git log ${LATEST_TAG}..HEAD --pretty=format:"- %s" 2>/dev/null || true)
-          if [ -z "$COMMITS" ]; then
-            echo "No new commits since last tag"
-            echo "### ℹ️ 无新更改" > release_notes.txt
-            exit 0
-          fi
-
-          # 移除合并提交
-          COMMITS=$(echo "$COMMITS" | grep -v "Merge" || true)
-
-          # 分类提交
-          CHAPTERS=$(echo "$COMMITS" | { grep -i "main:" || true; })
-          FEATURES=$(echo "$COMMITS" | { grep -i "feat:" || true; })
-          FIXES=$(echo "$COMMITS" | { grep -i "fix:" || true; })
-          OTHER=$(echo "$COMMITS" | { grep -vi "feat:\|fix:\|main:" || true; })
-
-          # 排序章节编号
-          CHAPTERS=$(echo "$CHAPTERS" | sort -t'-' -k2 -n)
-
-          # 生成 release notes
-          : > release_notes.txt
-          [ -n "$CHAPTERS" ] && echo -e "### 📚 章节更改\n$CHAPTERS\n" >> release_notes.txt
-          [ -n "$FEATURES" ] && echo -e "### ✨ 新增功能\n$FEATURES\n" >> release_notes.txt
-          [ -n "$FIXES" ] && echo -e "### 🐛 问题修复\n$FIXES\n" >> release_notes.txt
-          [ -n "$OTHER" ] && echo -e "### 🔧 其他更改\n$OTHER\n" >> release_notes.txt
+        run: bun run get-commits
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
