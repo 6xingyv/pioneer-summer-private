@@ -8,23 +8,32 @@ p.center {
   text-indent: initial;
   text-align: center;
 }
-/* 二级标题 */
-h2.chapter-t2 {
-  font-size: 26px;
+
+div.title {
+  border-bottom: solid 1px #91531d;
+  margin-left: 0.2em;
+}
+
+h2.caption {
+  font-size: 1.2em;
   text-indent: 0em;
   duokan-text-indent: 0em;
   color: #91531d;
-  font-weight: normal;
+  font-weight: bold;
   margin-top: 2em;
-  margin-bottom: 1.8em;
+  margin-bottom: 0em;
+  padding: 0em;
 }
-/* 正文 标题居左带细线 */
+
 h2.t1 {
-  color: #1f4a92;
-  font-size: 22px;
+  color:rgb(173, 118, 16);
+  font-size: 2em;
   font-weight: normal;
-  border-bottom: solid 1px #1f4a92;
-  padding: 0.2em 0em 0.5em 0em;
+  border-bottom: solid 1px rgb(115, 60, 9);
+  padding: 0em;
+  padding-top: -0.5em;
+  padding-bottom: 0.5em;
+  margin: 0em;
   duokan-text-indent: 0em;
   text-indent: 0em;
 }
