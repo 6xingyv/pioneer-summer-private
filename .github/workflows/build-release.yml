@@ -1,60 +1,109 @@
-name: Build and Upload EPUB (Release)
+name: Build and Upload EPUB(Release) to Repo A and Repo B
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # 允许手动触发
 
 permissions:
-  contents: write
+  contents: write # 对于在 Repo A (当前仓库) 中创建标签和 Release 是必需的
 
 jobs:
-  build:
+  build_and_release_all:
     runs-on: ubuntu-latest
-
+    env: # 为 Repo B 定义目标仓库信息
+      TARGET_REPO_OWNER: '6xingyv'
+      TARGET_REPO_NAME: 'pioneer-summer'
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Repository A (pioneer-summer-private) source code
+        uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          # repository: '6xingyv/pioneer-summer-private' # 默认为当前仓库，无需显式指定
+          fetch-depth: 0 # 获取所有历史，确保 commit hash 和标签操作正确
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
 
-      - name: Install dependencies
+      - name: Install dependencies in Repository A
         run: bun install
 
-      - name: Build EPUB
+      - name: Build EPUB from Repository A's source
         run: bun run build
 
-      - name: Rename EPUB file
+      - name: Rename EPUB file and Set Version
+        id: set_version
         run: |
           EPUB_FILE=$(find build -name "*.epub" -type f | head -n 1)
           if [ -z "$EPUB_FILE" ]; then
-            echo "Error: No EPUB file found"
+            echo "Error: No EPUB file found in build directory"
             exit 1
           fi
 
-          # 生成版本号：日期-hash
           DATE_VERSION=$(date +'%Y%m%d')
-          COMMIT_HASH=$(git rev-parse --short=7 HEAD)
-          VERSION="${DATE_VERSION}-${COMMIT_HASH}"
+          # github.sha 是 Repo A 中触发工作流的 commit
+          COMMIT_HASH_A=$(git rev-parse --short=7 HEAD)
+          VERSION_INFO="${DATE_VERSION}-${COMMIT_HASH_A}"
+          # 注意：EPUB文件名中不应包含仓库名，除非你有特殊需求
+          NEW_NAME="Pioneer_Summer_v${VERSION_INFO}.epub" # 例如：Pioneer_Summer_v20250508-a1b2c3d.epub
 
-          NEW_NAME="Pioneer_Summer_v${VERSION}.epub"
           mv "$EPUB_FILE" "$NEW_NAME"
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "Renamed EPUB to $NEW_NAME"
 
-      - name: Get Commit Messages
+          echo "VERSION_INFO=${VERSION_INFO}" >> $GITHUB_ENV
+          echo "RELEASE_TAG_NAME=v${VERSION_INFO}" >> $GITHUB_ENV # 例如：v20250508-a1b2c3d
+          echo "EPUB_NAME=${NEW_NAME}" >> $GITHUB_ENV
+
+      - name: Get Commit Messages for Release Notes
         id: get_commits
+        # 此脚本在 Repo A 的上下文中运行，生成 release_notes.txt
         run: bun run get-commits
 
-      - name: Create Release
+      # --- 步骤：在 Repository A (pioneer-summer-private) 中创建 Release ---
+      - name: Create and Push Tag to Repository A
+        env:
+          # GITHUB_TOKEN 会被 git 命令行隐式使用来进行认证
+          # 在工作流中设置 contents: write 权限后，GITHUB_TOKEN 就有权推送标签到当前仓库
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Setting up git user for Repository A operations..."
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+
+          echo "Attempting to create local tag ${{ env.RELEASE_TAG_NAME }} for commit ${{ github.sha }} in Repository A"
+          if git rev-parse ${{ env.RELEASE_TAG_NAME }} >/dev/null 2>&1; then
+            echo "Tag ${{ env.RELEASE_TAG_NAME }} already exists locally in Repository A."
+          else
+            git tag ${{ env.RELEASE_TAG_NAME }} ${{ github.sha }}
+            echo "Local tag ${{ env.RELEASE_TAG_NAME }} created in Repository A."
+          fi
+          
+          echo "Pushing tag ${{ env.RELEASE_TAG_NAME }} to Repository A (origin)..."
+          git push origin ${{ env.RELEASE_TAG_NAME }} || echo "Warning: Pushing tag ${{ env.RELEASE_TAG_NAME }} to Repository A failed. It might already exist on remote, or another push error occurred."
+
+      - name: Create Release in Repository A (pioneer-summer-private)
         uses: softprops/action-gh-release@v1
         with:
-          name: "v${{ env.VERSION }}"
-          tag_name: "v${{ env.VERSION }}"
-          body_path: release_notes.txt
-          files: Pioneer_Summer_v*.epub
+          # `repository` 字段不填时，默认为当前仓库 (pioneer-summer-private)
+          # `token` 字段不填时，默认使用 GITHUB_TOKEN
+          name: "Release ${{ env.RELEASE_TAG_NAME }}"
+          tag_name: ${{ env.RELEASE_TAG_NAME }} # 使用刚刚在 Repo A 中创建并推送的标签
+          body_path: release_notes.txt         # Release 说明文件
+          files: ${{ env.EPUB_NAME }}          # 上传的 EPUB 文件
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- 步骤：在 Repository B (pioneer-summer) 中创建 Release ---
+      - name: Create Release and Tag in Repository B (pioneer-summer)
+        uses: softprops/action-gh-release@v1
+        with:
+          repository: ${{ env.TARGET_REPO_OWNER }}/${{ env.TARGET_REPO_NAME }} # 指定目标仓库 B: 6xingyv/pioneer-summer
+          token: ${{ secrets.TARGET_REPO_PAT }}               # 使用有权限访问 Repo B 的 PAT
+          name: "Release ${{ env.RELEASE_TAG_NAME }}"        # Release 名称 (与 Repo A 保持一致)
+          # 此操作会在 Repo B 中创建名为 RELEASE_TAG_NAME 的标签。
+          # 这个标签将指向 Repo B 的 target_commitish (默认为 Repo B 的默认分支的最新 commit)
+          tag_name: ${{ env.RELEASE_TAG_NAME }}
+          # target_commitish: main # 可选: 指定在 Repo B 中打标签的具体分支/commit
+          body_path: release_notes.txt                     # Release 说明文件 (与 Repo A 使用相同文件)
+          files: ${{ env.EPUB_NAME }}                      # 上传的 EPUB 文件 (与 Repo A 使用相同文件)
+          draft: false
+          prerelease: false
