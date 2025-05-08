@@ -38,7 +38,13 @@ const chapterTemplatePath = join(
 const chapterTemplate = await readFile(chapterTemplatePath, "utf-8");
 
 // Parse chapters
-const files = (await readdir(CHAPTERS_DIR)).filter((f) => f.endsWith(".md"));
+const files = (await readdir(CHAPTERS_DIR)).filter((f) => f.endsWith(".md")).sort(
+  (a, b) => {
+    const aIndex = parseInt(a.split(".")[0]);
+    const bIndex = parseInt(b.split(".")[0]);
+    return aIndex - bIndex;
+  }
+);
 const chapters: {
   index: number;
   title: string;
@@ -50,6 +56,7 @@ for (const file of files) {
   const mdRaw = await readFile(join(CHAPTERS_DIR, file), "utf-8");
   const parsed = matter(mdRaw);
   const { index, title } = parsed.data;
+
   if (typeof index !== "number" || typeof title !== "string") {
     console.warn(`⚠️ 跳过 ${file}，缺少有效元数据`);
     continue;
@@ -76,8 +83,10 @@ for (const file of files) {
 
   chapters.push({ index, title, content: htmlContent, footnotes: footnotes });
   chapters.sort((a, b) => a.index - b.index);
+
   // Render chapter file
   const rendered = chapterTemplate
+    .replace(/{{\s*index\s*}}/g, `第 ${index} 章`)
     .replace(/{{\s*title\s*}}/g, title)
     .replace(/{{\s*content\s*}}/g, htmlContent)
     .replace(/{{\s*footnote\s*}}/g, footHTML);

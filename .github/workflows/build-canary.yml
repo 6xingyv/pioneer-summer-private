@@ -1,4 +1,4 @@
-name: Build and Upload EPUB
+name: Build and Upload EPUB(Canary)
 
 on:
   push:
