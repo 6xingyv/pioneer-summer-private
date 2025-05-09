@@ -7,6 +7,7 @@ import { promisify } from "util";
 import archiver from 'archiver';
 import { createWriteStream, existsSync } from "fs";
 import prettier from 'prettier';
+import { once } from "events";
 
 const run = promisify(exec);
 
@@ -162,7 +163,8 @@ try {
   archive.directory(join(BUILD_DIR, "OEBPS"), "OEBPS");
 
   await archive.finalize();
-
+  await once(output, "close");
+  
   console.log(`📘 EPUB 打包完成: ${OUTPUT_EPUB}`);
   process.exit(0);
 } catch (error) {
