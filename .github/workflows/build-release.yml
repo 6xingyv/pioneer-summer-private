@@ -1,10 +1,10 @@
-name: Build and Upload EPUB(Release) to Repo A and Repo B
+name: Build and Upload EPUB(Release)
 
 on:
   workflow_dispatch: # 允许手动触发
 
 permissions:
-  contents: write # 对于在 Repo A (当前仓库) 中创建标签和 Release 是必需的
+  contents: write
 
 jobs:
   build_and_release_all:
@@ -16,7 +16,6 @@ jobs:
       - name: Checkout Repository A (pioneer-summer-private) source code
         uses: actions/checkout@v3
         with:
-          # repository: '6xingyv/pioneer-summer-private' # 默认为当前仓库，无需显式指定
           fetch-depth: 0 # 获取所有历史，确保 commit hash 和标签操作正确
 
       - name: Setup Bun
@@ -55,7 +54,6 @@ jobs:
 
       - name: Get Commit Messages for Release Notes
         id: get_commits
-        # 此脚本在 Repo A 的上下文中运行，生成 release_notes.txt
         run: bun run get-commits
 
       # --- 步骤：在 Repository A (pioneer-summer-private) 中创建 Release ---
@@ -83,27 +81,21 @@ jobs:
       - name: Create Release in Repository A (pioneer-summer-private)
         uses: softprops/action-gh-release@v1
         with:
-          # `repository` 字段不填时，默认为当前仓库 (pioneer-summer-private)
-          # `token` 字段不填时，默认使用 GITHUB_TOKEN
           name: "Release ${{ env.RELEASE_TAG_NAME }}"
-          tag_name: ${{ env.RELEASE_TAG_NAME }} # 使用刚刚在 Repo A 中创建并推送的标签
-          body_path: release_notes.txt         # Release 说明文件
-          files: ${{ env.EPUB_NAME }}          # 上传的 EPUB 文件
+          tag_name: ${{ env.RELEASE_TAG_NAME }}
+          body_path: release_notes.txt
+          files: ${{ env.EPUB_NAME }}
           draft: false
           prerelease: false
 
-      # --- 步骤：在 Repository B (pioneer-summer) 中创建 Release ---
       - name: Create Release and Tag in Repository B (pioneer-summer)
         uses: softprops/action-gh-release@v1
         with:
-          repository: ${{ env.TARGET_REPO_OWNER }}/${{ env.TARGET_REPO_NAME }} # 指定目标仓库 B: 6xingyv/pioneer-summer
-          token: ${{ secrets.TARGET_REPO_PAT }}               # 使用有权限访问 Repo B 的 PAT
-          name: "Release ${{ env.RELEASE_TAG_NAME }}"        # Release 名称 (与 Repo A 保持一致)
-          # 此操作会在 Repo B 中创建名为 RELEASE_TAG_NAME 的标签。
-          # 这个标签将指向 Repo B 的 target_commitish (默认为 Repo B 的默认分支的最新 commit)
+          repository: ${{ env.TARGET_REPO_OWNER }}/${{ env.TARGET_REPO_NAME }}
+          token: ${{ secrets.TARGET_REPO_PAT }}
+          name: "Release ${{ env.RELEASE_TAG_NAME }}"
           tag_name: ${{ env.RELEASE_TAG_NAME }}
-          # target_commitish: main # 可选: 指定在 Repo B 中打标签的具体分支/commit
-          body_path: release_notes.txt                     # Release 说明文件 (与 Repo A 使用相同文件)
-          files: ${{ env.EPUB_NAME }}                      # 上传的 EPUB 文件 (与 Repo A 使用相同文件)
+          body_path: release_notes.txt
+          files: ${{ env.EPUB_NAME }}
           draft: false
           prerelease: false
