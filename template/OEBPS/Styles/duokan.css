@@ -5,13 +5,10 @@ p {
   text-indent: 2em;
 }
 p.center {
-  text-indent: initial;
   text-align: center;
 }
 
 div.title {
-  border-bottom: solid 1px #91531d;
-  margin-left: 0.2em;
 }
 
 h2.caption {
@@ -31,7 +28,6 @@ h2.t1 {
   font-weight: normal;
   border-bottom: solid 1px rgb(115, 60, 9);
   padding: 0em;
-  padding-top: -0.5em;
   padding-bottom: 0.5em;
   margin: 0em;
   duokan-text-indent: 0em;
